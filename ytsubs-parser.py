@@ -83,9 +83,22 @@ def filter_adjacent_texts(timestamps):
             and current_text not in next_text):
             filtered_timestamps.append(timestamps[i])
 
+    #filters out the timestamps that are not fully contained within the text of adjacent captions
+    i = 1
+    while i < len(filtered_timestamps) - 1:
+        current_text = filtered_timestamps[i][2]
+        prev_text = filtered_timestamps[i-1][2]
+        next_text = filtered_timestamps[i+1][2]
+
+        if (current_text in prev_text + " " + next_text):
+            filtered_timestamps.pop(i)
+        else:
+            i += 1
+
 
     # Include the first and last timestamps in the filtered list
-    filtered_timestamps.insert(0, timestamps[0])
+    if timestamps[0][2] not in filtered_timestamps[0][2]:
+        filtered_timestamps.insert(0, timestamps[0])
     filtered_timestamps.append(timestamps[-1])
 
     return filtered_timestamps
@@ -119,7 +132,7 @@ if __name__ == '__main__':
     url = sys.argv[1]
     timestamps = get_timestamps(filter_timestamps(get_raw_timestamps(url)))
     for timestamp in timestamps:
-        print(timestamp)
+        print(timestamp[-1])
     print('Total number of timestamps: ' + str(len(timestamps)))
 
 
