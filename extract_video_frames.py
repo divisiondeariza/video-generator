@@ -39,7 +39,7 @@ def extract_video_frames(timestamps, filename):
         text = timestamp['text'].replace(' ', '_')
         #creates a suitable filename from text removing all not alphanumeric characters
         frame_name = re.sub(r'\W+', '_', text)
-        os.system(f'ffmpeg -i "{filename}" -ss  {str(start_time)} -to {str(end_time)} -vf fps=1/1 frames/{text}.jpg')
+        os.system(f'ffmpeg -i "{filename}" -ss  {str(start_time)} -vf "scale=-1:640" -vframes 1  frames/{text}.png')
 
 
 if __name__ == "__main__":
