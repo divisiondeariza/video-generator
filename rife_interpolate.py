@@ -18,7 +18,7 @@ class RIFEModel(Model):
 # write a method that returns the model already initialized
 def get_model():
     model = Model()
-    model.load_model("RIFE/train_log", -1)
+    model.load_model("model/train_log", -1)
     model.eval()
     model.device()
     return model
@@ -80,5 +80,6 @@ if __name__ == "__main__":
             new_var = (frame[0] * 255).byte().numpy().transpose(1, 2, 0)[:h, :w]
             cv2.imwrite('frames/{}'.format(output_name), new_var)
         
-# for concatenating all the frames into a video use this ffmpeg command
-# ffmpeg -framerate 30 -i frames/%04d_%04d.png -c:v libx264 -profile:v high -crf 20 -pix_fmt yuv420p output.mp4
+# for concatenating all the frames into a video called output.mp4 use this ffmpeg command
+# ffmpeg -framerate 30 -pattern_type glob -i 'frames/*_*_*.*' -c:v libx264 -profile:v high -crf 20 -pix_fmt yuv420p output.mp4
+ 
