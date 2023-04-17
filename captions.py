@@ -1,7 +1,10 @@
+#!/usr/bin/env python3
+# Description: Extract captions from YouTube videos using the yt-dlp library.
 import os, re, sys
 from bs4 import BeautifulSoup
 import webvtt
-from datetime import datetime
+from datetime import datetime, timedelta
+import numpy as np
 
   
 def get_raw_timestamps(url):
@@ -32,7 +35,6 @@ def get_raw_timestamps(url):
     return timestamp
 
 #write a function that takes the results from the get_timestamps function and transform timestamps in datetimes
-
 def get_timestamps(timestamps):
     """
     Convert timestamps to datetime objects.
@@ -48,11 +50,27 @@ def get_timestamps(timestamps):
     """
     datetime_timestamps = []
     for timestamp in timestamps:
-        start_time = datetime.strptime(timestamp[0], '%H:%M:%S.%f')
-        end_time = datetime.strptime(timestamp[1], '%H:%M:%S.%f')
+        #start_time is a timedelta object created from an string with format '%H:%M:%S.%f'  
+        start_time = get_timedelta_from_string(timestamp[0])
+        end_time = get_timedelta_from_string(timestamp[1])
         datetime_timestamps.append((start_time, end_time, timestamp[2]))
 
     return datetime_timestamps
+
+def get_timedelta_from_string(string):
+    """
+    Convert a string with format '%H:%M:%S.%f' to a timedelta object.
+
+    Args:
+        string (str): A string with format '%H:%M:%S.%f'.
+
+    Returns:
+        datetime.timedelta: A timedelta object.
+
+    Raises:
+        None
+    """
+    return datetime.strptime(string, '%H:%M:%S.%f') - datetime.strptime('00:00:00.000', '%H:%M:%S.%f')
 
 def filter_adjacent_texts(timestamps):
     """
@@ -147,3 +165,40 @@ def get_captions(url):
              'end_time': timestamp[1], 
              'text': timestamp[2]} 
              for timestamp in timestamps]
+
+def get_equally_separated_captions(captions, delta_seconds):
+    #creates a list of captions equally spaced by delta_seconds
+    #create a timedelta objects from delta_seconds
+    total_seconds = (captions[-1]['end_time'] - captions[0]['start_time']).total_seconds()
+    timestamps_list = list(np.arange(0, total_seconds, delta_seconds)) + [total_seconds]
+    timestamps_list = [timedelta(seconds = timestamp) for timestamp in timestamps_list]
+    spaced_captions = [{'start_time': timestamps_list[i], 'end_time': timestamps_list[i+1], 'text': ''} for i in range(len(timestamps_list) - 1)]
+    for spaced_caption in spaced_captions:
+        #find the two texts in captions that are closest to the start time of the caption
+        #and add them to the text of the caption
+        for i in range(len(captions) - 1):
+            if captions[i]['start_time'] <= spaced_caption['start_time'] <= captions[i+1]['start_time']:
+                text = captions[i]['text'] + ' ' + captions[i+1]['text']
+                break
+        else:
+            #if the start time of the caption is not between the start times of any two captions in captions
+            #then the text of the caption is the text of the caption that is closest to the start time of the caption
+            if spaced_caption['start_time'] < captions[0]['start_time']:
+                text = captions[0]['text']
+
+            #get the longest phrase that is contained in both texts
+        for phrase in text.split('.'):
+            if len(phrase) > len(spaced_caption['text']):
+                spaced_caption['text'] = phrase
+    return spaced_captions
+
+if __name__ == '__main__':
+    url = 'https://www.youtube.com/watch?v=6ZfuNTqbHE8'
+    captions = get_captions(url)
+    spaced_captions = get_equally_separated_captions(captions, 10)
+    for caption in captions:
+        print(caption['text'])
+    for caption in spaced_captions:
+        print(caption['text'])
+
+
