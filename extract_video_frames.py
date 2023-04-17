@@ -6,13 +6,14 @@ from datetime import datetime, timedelta
 
 #write a method that extracts the frames from the youtube video given a list of timestamps and saves them in a folder
 #
-def extract_frames_from_yt_video(timestamps, url):
+def extract_frames_from_yt_video(timestamps, url, frames_path = 'frames'):
     """
     Extract frames from a YouTube video at the specified timestamps.
     
     Args:
         timestamps (list): A list of tuples containing the start time, end time, and text of each caption.
         url (str): URL of the video for which frames are to be extracted.
+        frames_path (str): Path to the folder where the frames are to be saved.
     
     Returns:
         None
@@ -21,18 +22,19 @@ def extract_frames_from_yt_video(timestamps, url):
         None
     """
     #create a folder for the frames
-    if not os.path.exists('frames'):
-        os.mkdir('frames')
+    if not os.path.exists(frames_path):
+        os.mkdir(frames_path)
     
     #download the video and stores the name of the file, uses the format mp4
-    os.system('yt-dlp --verbose -f bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4 --output "frames/%(title)s.%(ext)s" ' + url)
+    os.system(f'yt-dlp --verbose -f bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4 --output "{frames_path}/%(title)s.%(ext)s" ' + url)
 
     #gets the name of the file
-    filename = os.listdir('frames')[0]
+    # finds the mp4 file in the folder
+    filename = [filename for filename in os.listdir(frames_path) if filename.endswith('.mp4')][0]
     #extract the frames
-    extract_video_frames(timestamps, 'frames/' + filename)
+    extract_video_frames(timestamps, frames_path + "/" + filename, frames_path)
 
-def extract_video_frames(timestamps, filename):
+def extract_video_frames(timestamps, filename, frames_path = 'frames'):
     for timestamp in timestamps:
         #convert the timestamps to hh:mm:ss format
         start_time = (datetime(1,1,1) + timestamp['start_time']).strftime('%H:%M:%S')
@@ -40,7 +42,9 @@ def extract_video_frames(timestamps, filename):
         text = timestamp['text'].replace(' ', '_')
         #creates a suitable filename from text removing all not alphanumeric characters
         frame_name = re.sub(r'\W+', '_', text)
-        os.system(f'ffmpeg -i "{filename}" -ss  {str(start_time)} -vframes 1  frames/{text}.png')
+
+        ffmpeg_command = f'ffmpeg -i "{filename}" -ss  {str(start_time)} -vframes 1  {frames_path}/{text}.png'
+        os.system(ffmpeg_command)
 
 
 if __name__ == "__main__":
@@ -52,4 +56,4 @@ if __name__ == "__main__":
                    'end_time': timestamp['end_time'], 
                    'text': f'{index:04d}_0000'} 
                    for index, timestamp in enumerate(timestamps)]
-    extract_frames_from_yt_video(timestamps, url)
+    extract_frames_from_yt_video(timestamps, url, 'frames')
