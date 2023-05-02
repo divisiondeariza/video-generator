@@ -88,7 +88,7 @@ def generate_frames_for_dir(device, frames_path, n=1):
         img0, img1 = resize_frames_for_interpolation(img0, img1)
         frames = generate_frames(img0, img1, n)
         for index, frame in enumerate(frames):
-            n, c, h, w = img0.shape
+            _, _, h, w = img0.shape
             start_frame_name = int(filename0.split(".")[0].split("_")[0])
             # save the image in frames like 0000_0000.png if it was interpolated between 0000.png and 0001.png, 0000_0001.png if it was interpolated between 0000.png and 0001.png, etc.
             output_name = "{:04d}_{:04d}.png".format(start_frame_name, index + 1)
