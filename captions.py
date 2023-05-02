@@ -9,7 +9,6 @@ import subprocess
 from yt_dlp import YoutubeDL
 from io import StringIO
 
-  
 def get_raw_timestamps(url):
     """
     Extract timestamps with text from a VTT file.
@@ -23,13 +22,6 @@ def get_raw_timestamps(url):
     Raises:
         None
     """
-    if not os.path.exists('subs'):
-        os.mkdir('subs')
-
-    # os.system('yt-dlp --verbose --write-auto-sub --skip-download --sub-format #srt --output "subs/%(title)s.%(ext)s" ' + url)
-
-    #for storing the content of the subtitles in a variable instead of a file
-    # subtitles = subprocess.check_output('yt-dlp --verbose --write-auto-sub # # --skip-download --sub-format srt -o - ' + url, shell=True)
 
     # this is equivalent to the command above
     ydl_opts = {'writeautomaticsub': True, 'skip_download': True, 'subtitlesformat': 'srt'}
@@ -67,7 +59,6 @@ def get_timestamps(timestamps):
     """
     datetime_timestamps = []
     for timestamp in timestamps:
-        #start_time is a timedelta object created from an string with format '%H:%M:%S.%f'  
         start_time = get_timedelta_from_string(timestamp[0])
         end_time = get_timedelta_from_string(timestamp[1])
         datetime_timestamps.append((start_time, end_time, timestamp[2]))
