@@ -92,7 +92,7 @@ def generate_frames_for_dir(device, frames_path, n=1):
             start_frame_name = int(filename0.split(".")[0].split("_")[0])
             # save the image in frames like 0000_0000.png if it was interpolated between 0000.png and 0001.png, 0000_0001.png if it was interpolated between 0000.png and 0001.png, etc.
             output_name = "{:04d}_{:04d}.png".format(start_frame_name, index + 1)
-            ffmpeg_command = (frame[0] * 255).byte().numpy().transpose(1, 2, 0)[:h, :w]
+            ffmpeg_command = (frame[0] * 255).cpu().byte().numpy().transpose(1, 2, 0)[:h, :w]
             cv2.imwrite(os.path.join(frames_path, output_name), ffmpeg_command)
         
 if __name__ == "__main__":  
