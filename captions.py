@@ -5,6 +5,9 @@ from bs4 import BeautifulSoup
 import webvtt
 from datetime import datetime, timedelta
 import numpy as np
+import subprocess
+from yt_dlp import YoutubeDL
+from io import StringIO
 
   
 def get_raw_timestamps(url):
@@ -23,11 +26,25 @@ def get_raw_timestamps(url):
     if not os.path.exists('subs'):
         os.mkdir('subs')
 
-    os.system('yt-dlp --verbose --write-auto-sub --skip-download --sub-format srt --output "subs/%(title)s.%(ext)s" ' + url)
+    # os.system('yt-dlp --verbose --write-auto-sub --skip-download --sub-format #srt --output "subs/%(title)s.%(ext)s" ' + url)
 
-    file_name = os.listdir('subs')[0]
+    #for storing the content of the subtitles in a variable instead of a file
+    # subtitles = subprocess.check_output('yt-dlp --verbose --write-auto-sub # # --skip-download --sub-format srt -o - ' + url, shell=True)
+
+    # this is equivalent to the command above
+    ydl_opts = {'writeautomaticsub': True, 'skip_download': True, 'subtitlesformat': 'srt'}
+    with YoutubeDL(ydl_opts) as ydl:
+        #to get the srt captions as a string
+        subtitles_list = ydl.extract_info(url, download=False)['automatic_captions']['en']
+        # Now find the vtt subtitles in the list using the extension and a lambda function
+        vtt_subtitles_url = list(filter(lambda x: x['ext'] == 'vtt', subtitles_list))[0]['url']
+        # Download the vtt subtitles using the url and store them in a variable
+        vtt_subtitles = ydl.urlopen(vtt_subtitles_url).read().decode('utf-8')
+
     timestamp = []
-    for caption in webvtt.read('subs/' + file_name):
+    # Iterate through the captions in the vtt file with all the subtitles in the vtt_subtitles variable
+    subtitles_buffer = StringIO(vtt_subtitles)
+    for caption in webvtt.read_buffer(subtitles_buffer):
         # Replace \n with spaces
         caption_text = re.sub(r'\n', ' ', caption.text).strip()
         timestamp.append((caption.start, caption.end, caption_text))
@@ -195,7 +212,7 @@ def get_equally_separated_captions(captions, delta_seconds):
 if __name__ == '__main__':
     url = 'https://www.youtube.com/watch?v=6ZfuNTqbHE8'
     captions = get_captions(url)
-    spaced_captions = get_equally_separated_captions(captions, 10)
+    spaced_captions = get_equally_separated_captions(captions, 0.2)
     for caption in captions:
         print(caption['text'])
     for caption in spaced_captions:

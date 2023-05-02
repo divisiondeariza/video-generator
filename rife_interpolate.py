@@ -4,9 +4,9 @@
 from model.RIFE_HDv3 import Model
 import torch
 import cv2
-import numpy as np
 import torch.nn.functional as F
-import os, gc
+import os
+from tqdm import tqdm
 
 class RIFEModel(Model):
     def inference(self, img0, img1, scale=1):
@@ -63,6 +63,37 @@ def generate_frames(img0, img1, n=1):
         new_frames.append(frames[-1])
         frames = new_frames
     return frames[1:-1]
+
+def generate_frames_for_dir(device, frames_path, n=1):
+    """
+    Generate frames for a given directory of frames. frames_path should contain the frames in the format 0000_0000.png, 0001_0000.png, etc.
+    
+    Args:
+        device (torch.device): Device to be used for interpolation.
+        frames_path (str): Path to the folder where the frames are to be saved.
+        n (int): log base 2 of the number of frames to be generated plus one between each pair of frames. For example, if n = 1, then 1 frames will be generated between each pair of frames, if n = 2, then 3 frames will be generated between each pair of frames, if n = 3, then 7 frames will be generated between each pair of frames, etc.
+
+    Returns:
+        None
+    
+    Raises:
+        None
+    """
+    files_tuples = [(filename0, filename1) for filename0, filename1 in zip(sorted(os.listdir(frames_path)), sorted(os.listdir(frames_path))[1:])]
+    for filename0, filename1 in tqdm(files_tuples):
+        img0 = cv2.imread(os.path.join(frames_path, filename0), cv2.IMREAD_UNCHANGED)
+        img1 = cv2.imread(os.path.join(frames_path, filename1), cv2.IMREAD_UNCHANGED)
+        img0 = get_image_for_interpolation(img0, device)
+        img1 = get_image_for_interpolation(img1, device)
+        img0, img1 = resize_frames_for_interpolation(img0, img1)
+        frames = generate_frames(img0, img1, n)
+        for index, frame in enumerate(frames):
+            n, c, h, w = img0.shape
+            start_frame_name = int(filename0.split(".")[0].split("_")[0])
+            # save the image in frames like 0000_0000.png if it was interpolated between 0000.png and 0001.png, 0000_0001.png if it was interpolated between 0000.png and 0001.png, etc.
+            output_name = "{:04d}_{:04d}.png".format(start_frame_name, index + 1)
+            ffmpeg_command = (frame[0] * 255).byte().numpy().transpose(1, 2, 0)[:h, :w]
+            cv2.imwrite(os.path.join(frames_path, output_name), ffmpeg_command)
         
 if __name__ == "__main__":  
     for filename0, filename1 in zip(sorted(os.listdir("frames")), sorted(os.listdir("frames"))[1:]):
@@ -81,5 +112,5 @@ if __name__ == "__main__":
             cv2.imwrite('frames/{}'.format(output_name), new_var)
         
 # for concatenating all the frames into a video called output.mp4 use this ffmpeg command
-# ffmpeg -framerate 30 -pattern_type glob -i 'frames/*_*_*.*' -c:v libx264 -profile:v high -crf 20 -pix_fmt yuv420p output.mp4
+# ffmpeg -framerate 30 -pattern_type glob -i 'frames/*_*.png' -c:v libx264 -profile:v high -crf 20 -pix_fmt yuv420p output.mp4
  
