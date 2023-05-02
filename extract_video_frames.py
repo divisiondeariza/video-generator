@@ -42,13 +42,9 @@ def extract_video_frames(timestamps, filename, frames_path = 'frames'):
         start_time = (datetime(1,1,1) + timestamp['start_time']).strftime('%H:%M:%S.%f')
         #to add fractions of seconds use %H:%M:%S.%f
         end_time = (datetime(1,1,1) + timestamp['end_time']).strftime('%H:%M:%S.%f')
-        text = timestamp['text'].replace(' ', '_')
-        #creates a suitable filename from text removing all not alphanumeric characters
-        frame_name = re.sub(r'\W+', '_', text)
-        ffmpeg_command = f'ffmpeg -hide_banner -ss  {str(start_time)} -i "{filename}" -vframes 1  {frames_path}/{text}.png 2>&1'
-        #os.system(ffmpeg_command)
+        frame_name = timestamp['frame_name']
+        ffmpeg_command = f'ffmpeg -hide_banner -ss  {str(start_time)} -i "{filename}" -vframes 1  {frames_path}/{frame_name}.png 2>&1'
         output = subprocess.check_output(ffmpeg_command, shell=True, stderr=subprocess.STDOUT)
-
 
 if __name__ == "__main__":
     #url = sys.argv[1]
