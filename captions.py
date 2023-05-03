@@ -180,24 +180,16 @@ def get_equally_separated_captions(captions, delta_seconds):
     total_seconds = (captions[-1]['end_time'] - captions[0]['start_time']).total_seconds()
     timestamps_list = list(np.arange(0, total_seconds, delta_seconds)) + [total_seconds]
     timestamps_list = [timedelta(seconds = timestamp) for timestamp in timestamps_list]
-    spaced_captions = [{'start_time': timestamps_list[i], 'end_time': timestamps_list[i+1], 'text': ''} for i in range(len(timestamps_list) - 1)]
+    spaced_captions = [{'start_time': timestamps_list[i], 
+                        'end_time': timestamps_list[i+1]} for i in range(len(timestamps_list) - 1)]
+    # add the rest of the elements to the closests spaced_captions elements
+    
     for spaced_caption in spaced_captions:
-        #find the two texts in captions that are closest to the start time of the caption
-        #and add them to the text of the caption
-        for i in range(len(captions) - 1):
-            if captions[i]['start_time'] <= spaced_caption['start_time'] <= captions[i+1]['start_time']:
-                text = captions[i]['text'] + ' ' + captions[i+1]['text']
+        for caption in captions:
+            if (spaced_caption['end_time'] < caption['end_time']):
+                # adds all elements on the same spaced_caption except start_time and end_time
+                spaced_caption.update({key: caption[key] for key in caption.keys() if key not in ['start_time', 'end_time']})
                 break
-        else:
-            #if the start time of the caption is not between the start times of any two captions in captions
-            #then the text of the caption is the text of the caption that is closest to the start time of the caption
-            if spaced_caption['start_time'] < captions[0]['start_time']:
-                text = captions[0]['text']
-
-            #get the longest phrase that is contained in both texts
-        for phrase in text.split('.'):
-            if len(phrase) > len(spaced_caption['text']):
-                spaced_caption['text'] = phrase
     return spaced_captions
 
 if __name__ == '__main__':
